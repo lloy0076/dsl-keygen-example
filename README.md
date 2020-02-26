@@ -1,3 +1,44 @@
+## Generate Key Pairs
+
+This is a simple REACT application to generate a set of RSASSA-PKCS1-v1_5 key pairs.
+
+It uses the Crypto facilities available in all modern browser, see:
+
+* https://developer.mozilla.org/en-US/docs/Web/API/Crypto
+* https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto
+
+To generate a key pair, see:
+
+* src/lib/Generate.js
+
+## Quick Start
+
+```javascript
+CryptographyService.generateSignatureKeyPair().then((keys) => {
+    // Get the key pairs.
+    const { publicKey: generatedPublicKey, privateKey: generatedPrivateKey } = keys;
+
+    // Transform the to PEM.
+    const privateKeyPem = CryptographyService.makePem(generatedPrivateKey);
+    const publicKeyPem = CryptographyService.makePem(generatedPublicKey, 'PUBLIC KEY');
+
+    // Immediately import to check for any errors.
+    CryptographyService.importSigningKey(privateKeyPem.key).catch((error) => {
+        console.error('Error importing key to sign.', error);
+        throw error;
+    });
+
+    CryptographyService.importVerificationKey(publicKeyPem.key).catch((error) => {
+        console.error('Error importing key to verify.', error);
+        throw error;
+    });
+});
+```
+
+---
+
+# Bootstrappred README.md
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
