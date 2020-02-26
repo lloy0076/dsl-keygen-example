@@ -64,6 +64,26 @@ export default class CryptographyService {
     }
 
     /**
+     * Gets the PEM contents as an array buffer.
+     *
+     * @param type
+     * @returns {ArrayBuffer}
+     */
+    static getPemContentsAsBuffer(pem, type = 'PRIVATE KEY') {
+        // fetch the part of the PEM string between header and footer
+        const pemHeader = CryptographyService.makePemHeader(type);
+        const pemFooter = CryptographyService.makePemFooter(type);
+        const pemContents = pem.substring(pemHeader.length, pem.length - pemFooter.length);
+
+        // base64 decode the string to get the binary data
+        const binaryDerString = atob(pemContents);
+        // convert from a binary string to an ArrayBuffer
+        const binaryDer = CryptographyService.str2ab(binaryDerString);
+
+        return binaryDer;
+    }
+
+    /**
      * Imports a verification key.
      *
      * @note This is the public key.
@@ -89,26 +109,6 @@ export default class CryptographyService {
             true,
             ['verify'],
         );
-    }
-
-    /**
-     * Gets the PEM contents as an array buffer.
-     *
-     * @param type
-     * @returns {ArrayBuffer}
-     */
-    static getPemContentsAsBuffer(pem, type = 'PRIVATE KEY') {
-        // fetch the part of the PEM string between header and footer
-        const pemHeader = CryptographyService.makePemHeader(type);
-        const pemFooter = CryptographyService.makePemFooter(type);
-        const pemContents = pem.substring(pemHeader.length, pem.length - pemFooter.length);
-
-        // base64 decode the string to get the binary data
-        const binaryDerString = atob(pemContents);
-        // convert from a binary string to an ArrayBuffer
-        const binaryDer = CryptographyService.str2ab(binaryDerString);
-
-        return binaryDer;
     }
 
     /**
