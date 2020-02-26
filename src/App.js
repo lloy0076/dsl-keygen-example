@@ -1,37 +1,59 @@
-import React from 'react';
+import React, { useState } from 'react';
+
 import {
     BrowserRouter as Router,
     Switch,
     Route,
-    Link,
+    NavLink as RRNavLink,
 } from 'react-router-dom';
 
-import './App.css';
+import {
+    Collapse,
+    Navbar,
+    NavbarToggler,
+    NavbarBrand,
+    Nav,
+    NavItem,
+    NavLink,
+} from 'reactstrap';
 
+import 'bootstrap/dist/css/bootstrap.min.css';
+
+import Generate from './Generate';
 import Home from './Home';
 import Verify from './Verify';
 import Sign from './Sign';
 
 function App() {
-    return (
-        <div className='App'>
-            <h1>Verify Signature</h1>
+    const [isOpen, setIsOpen] = useState(false);
+    const toggle = () => setIsOpen(!isOpen);
 
+    return (
+        <div className={'container'}>
             <Router>
                 <div>
-                    <nav>
-                        <ul>
-                            <li>
-                                <Link to={'/'}>Home</Link>
-                            </li>
-                            <li>
-                                <Link to={'/sign'}>Sign</Link>
-                            </li>
-                            <li>
-                                <Link to={'/verify'}>Verify</Link>
-                            </li>
-                        </ul>
-                    </nav>
+                    <Navbar color={'dark'} dark expand={'md'}>
+                        <NavbarBrand href={'/'}>家</NavbarBrand>
+                        <NavbarToggler onClick={toggle}/>
+                        <Collapse isOpen={isOpen} navbar>
+                            <Nav className={'mr-auto'} navbar>
+                                <NavItem>
+                                    <NavLink tag={RRNavLink} exact to={'/generate'}
+                                        activeClassName={'active'}>Generate</NavLink>
+                                </NavItem>
+                                <NavItem>
+                                    <NavLink tag={RRNavLink} exact to={'/sign'} activeClassName={'active'}>
+                                        Sign
+                                    </NavLink>
+                                </NavItem>
+                                <NavItem>
+                                    <NavLink tag={RRNavLink} exact to={'/verify'} activeClassName={'active'}>
+                                        Verify
+                                    </NavLink>
+                                </NavItem>
+                            </Nav>
+                        </Collapse>
+                    </Navbar>
                 </div>
                 <Switch>
                     <Route path={'/sign'}>
@@ -39,6 +61,9 @@ function App() {
                     </Route>
                     <Route path={'/verify'}>
                         <Verify/>
+                    </Route>
+                    <Route path={'/generate'}>
+                        <Generate/>
                     </Route>
                     <Route path={'/'}>
                         <Home/>
