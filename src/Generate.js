@@ -127,7 +127,7 @@ export default function Generate() {
 
             <br/>
 
-            <Button color={'secondary'} onClick={generateKeyPair}>Import Key Pair</Button>&nbsp;
+            <Button color={'secondary'} disabled={true}>Import Key Pair</Button>&nbsp;
             <Button className={'float-right'} color={'primary'} onClick={generateKeyPair}>Generate Key Pair</Button>
         </div>
     );
