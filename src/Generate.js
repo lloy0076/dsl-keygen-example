@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
+
 import {
     Button,
-    Card, CardBody, CardTitle,
+    Card, CardBody, CardText, CardTitle,
+    Form, FormGroup,
 } from 'reactstrap';
+
+import CryptographyService from './lib/CryptographyService';
 
 export default function Generate() {
     let initialPrivateKey = '';
@@ -30,100 +34,47 @@ export default function Generate() {
         }
     }
 
-    let [privateKey, setPrivateKey] = useState(initialPrivateKey);
-    let [publicKey, setPublicKey] = useState(initialPublicKey);
+    const [privateKey, setPrivateKey] = useState(initialPrivateKey);
+    const [publicKey, setPublicKey] = useState(initialPublicKey);
+
+    function handleChange(e) {
+        switch (e.target.id) {
+        case 'privateKey':
+            setPrivateKey(e.target.value);
+            break;
+        case 'publicKey':
+            setPublicKey(e.target.value);
+            break;
+        default:
+            throw new Error(`Got unknown change event from ${e.target.id}.`);
+        }
+    }
 
     function generateKeyPair() {
-        const { crypto } = window;
+        setPublicKey('<generating>');
+        setPrivateKey('<generating>');
 
-        function a2str(buf) {
-            return String.fromCharCode.apply(null, new Uint8Array(buf));
-        }
+        CryptographyService.generateSignatureKeyPair().then((keys) => {
+            const { publicKey: generatedPublicKey, privateKey: generatedPrivateKey } = keys;
 
-        function str2ab(str) {
-            const buf = new ArrayBuffer(str.length);
-            const bufView = new Uint8Array(buf);
-            for (let i = 0, strLen = str.length; i < strLen; i++) {
-                bufView[i] = str.charCodeAt(i);
-            }
-            return buf;
-        }
+            const privateKeyPem = CryptographyService.makePem(generatedPrivateKey);
+            localStorage.setItem('private_key', JSON.stringify(privateKeyPem));
+            setPrivateKey(privateKeyPem.key);
 
-        function importPrivateKey(pem) {
-            // fetch the part of the PEM string between header and footer
-            const pemHeader = '-----BEGIN PRIVATE KEY-----';
-            const pemFooter = '-----END PRIVATE KEY-----';
-            const pemContents = pem.substring(pemHeader.length, pem.length - pemFooter.length);
-            // base64 decode the string to get the binary data
-            const binaryDerString = atob(pemContents);
-            // convert from a binary string to an ArrayBuffer
-            const binaryDer = str2ab(binaryDerString);
+            const publicKeyPem = CryptographyService.makePem(generatedPublicKey, 'PUBLIC KEY');
+            localStorage.setItem('public_key', JSON.stringify(publicKeyPem));
+            setPublicKey(publicKeyPem.key);
 
-            crypto.subtle.digest('SHA-256', binaryDer).then((result) => console.log(btoa(result)));
+            // Immediately import to check for any errors.
+            CryptographyService.importSigningKey(privateKeyPem.key).catch((error) => {
+                console.error('Error importing key to sign.', error);
+                throw error;
+            });
 
-            return crypto.subtle.importKey(
-                'pkcs8',
-                binaryDer,
-                {
-                    name: 'RSASSA-PKCS1-V1_5',
-                    modulusLength: 4096,
-                    // i.e. 65537
-                    publicExponent: new Uint8Array([1, 0, 1]),
-                    hash: 'SHA-256',
-                },
-                true,
-                ['encrypt', 'decrypt', 'verify', 'sign'],
-            );
-        }
-
-        crypto.subtle.generateKey(
-            {
-                name: 'RSASSA-PKCS1-V1_5',
-                modulusLength: 4096,
-                // i.e. 65537
-                publicExponent: new Uint8Array([1, 0, 1]),
-                hash: 'SHA-256',
-            },
-            true,
-            ['encrypt', 'decrypt', 'verify', 'sign'],
-        ).then((keyPair) => {
-            crypto.subtle.exportKey('pkcs8', keyPair.privateKey).then(
-                (key) => {
-                    crypto.subtle.digest('SHA-256', key).then((result) => console.log(btoa(result)));
-
-                    const exportedAsString = a2str(key);
-                    const exportedAsBase64 = btoa(exportedAsString);
-
-                    const exported = {
-                        key: `-----BEGIN PRIVATE KEY-----\n${exportedAsBase64}\n-----END PRIVATE KEY-----`,
-                    };
-
-                    localStorage.setItem('private_key', JSON.stringify(exported));
-
-                    setPrivateKey(exported.key);
-
-                    console.log('Attempting to import key', exported);
-
-                    importPrivateKey(exported.key).then((result) => {
-                        console.log('Import went OK.');
-                    }).catch((error) => console.trace(error));
-                },
-            ).catch((error) => console.error(error));
-
-            crypto.subtle.exportKey('spki', keyPair.publicKey).then(
-                (key) => {
-                    const exportedAsString = a2str(key);
-
-                    const exportedAsBase64 = btoa(exportedAsString);
-                    const exported = {
-                        key: `-----BEGIN PUBLIC KEY-----\n${exportedAsBase64}\n-----END PRIVATE KEY-----`,
-                    };
-
-                    localStorage.setItem('public_key', JSON.stringify(exported));
-
-                    setPublicKey(exported.key);
-                },
-            ).catch((error) => console.error(error));
+            CryptographyService.importVerificationKey(publicKeyPem.key).catch((error) => {
+                console.error('Error importing key to verify.', error);
+                throw error;
+            });
         });
     }
 
@@ -134,9 +85,13 @@ export default function Generate() {
             <Card>
                 <CardBody>
                     <CardTitle><span style={{ fontWeight: 'bolder' }}>Private Key</span></CardTitle>
-                    <pre>
-                        {privateKey}
-                    </pre>
+                    <Form>
+                        <FormGroup>
+                            <textarea name={'privateKey'} id={'privateKey'} value={privateKey} cols={64} rows={10}
+                                onChange={handleChange}>
+                            </textarea>
+                        </FormGroup>
+                    </Form>
                 </CardBody>
             </Card>
 
@@ -145,15 +100,20 @@ export default function Generate() {
             <Card>
                 <CardBody>
                     <CardTitle><span style={{ fontWeight: 'bolder' }}>Public Key</span></CardTitle>
-                    <pre>
-                        {publicKey}
-                    </pre>
+                    <Form>
+                        <FormGroup>
+                            <textarea name={'publickKey'} id={'publickKey'} value={publicKey} cols={64} rows={10}
+                                onChange={handleChange}>
+                            </textarea>
+                        </FormGroup>
+                    </Form>
                 </CardBody>
             </Card>
 
             <br/>
 
-            <Button color={'success'} onClick={generateKeyPair}>Generate Key Pair</Button>
+            <Button color={'secondary'} onClick={generateKeyPair}>Import Key Pair</Button>&nbsp;
+            <Button className={'float-right'} color={'primary'} onClick={generateKeyPair}>Generate Key Pair</Button>
         </div>
     );
 }
