@@ -19,6 +19,7 @@ import {
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 
+import Generate from './Generate';
 import Home from './Home';
 import Verify from './Verify';
 import Sign from './Sign';
@@ -37,7 +38,8 @@ function App() {
                         <Collapse isOpen={isOpen} navbar>
                             <Nav className={'mr-auto'} navbar>
                                 <NavItem>
-                                    <NavLink tag={RRNavLink} exact to={'/'} activeClassName={'active'}>Home</NavLink>
+                                    <NavLink tag={RRNavLink} exact to={'/generate'}
+                                        activeClassName={'active'}>Generate</NavLink>
                                 </NavItem>
                                 <NavItem>
                                     <NavLink tag={RRNavLink} exact to={'/sign'} activeClassName={'active'}>
@@ -59,6 +61,9 @@ function App() {
                     </Route>
                     <Route path={'/verify'}>
                         <Verify/>
+                    </Route>
+                    <Route path={'/generate'}>
+                        <Generate/>
                     </Route>
                     <Route path={'/'}>
                         <Home/>
