@@ -20,17 +20,47 @@ import {
     Form, FormGroup,
 } from 'reactstrap';
 
+import CryptographyService from './lib/CryptographyService';
+import KeyStore from './lib/KeyStore';
+
 export default function Sign() {
-    const [formValue, setFormValue] = useState({ text: '' });
+    const { privateKey: initialPrivateKey, publicKey: initialPublicKey } = KeyStore.refreshFromStorage();
+
+    const initialText = localStorage.getItem('text');
+    const initialSignature = localStorage.getItem('signature');
+
+    const [privateKey, setPrivateKey] = useState(initialPrivateKey);
+    const [publicKey, setPublicKey] = useState(initialPublicKey);
+    const [formValue, setFormValue] = useState({ text: initialText, signature: initialSignature });
 
     function handleChange(e) {
         const newValue = { ...formValue, ...{ [e.target.id]: e.target.value } };
+        localStorage.setItem('text', e.target.value);
+
         setFormValue(newValue);
     }
 
-    function handleSign() {
-        const newValue = { ...formValue, ...{ result: 'TBD' } };
-        setFormValue(newValue);
+    async function handleSign() {
+        CryptographyService.importSigningKey(privateKey).then(async (signingKey) => {
+            const signature = await CryptographyService.sign(formValue.text, signingKey);
+
+            localStorage.setItem('signature', signature);
+            const newValue = { ...formValue, ...{ signature: signature } };
+            setFormValue(newValue);
+        }).catch((error) => console.error(error));
+    }
+
+    function handleFill() {
+        const howMany = Math.ceil(Math.random() * 512) + 32;
+        const bytes = new Uint8Array(howMany);
+        crypto.getRandomValues(bytes);
+
+        const bytesAsString = CryptographyService.a2str(bytes);
+        const bytesAsBase64 = btoa(bytesAsString);
+
+        localStorage.setItem('text', bytesAsBase64);
+        localStorage.setItem('signature', '');
+        setFormValue({ text: bytesAsBase64, signature: '' });
     }
 
     return (
@@ -48,7 +78,8 @@ export default function Sign() {
                             />
                         </FormGroup>
                         <FormGroup>
-                            <Button className={'float-left'} color={'success'} onClick={handleSign}>Sign</Button>
+                            <Button className={'float-left'} color={'secondary'} onClick={handleFill}>Fill</Button>
+                            <Button className={'float-right'} color={'primary'} onClick={handleSign}>Sign</Button>
                         </FormGroup>
                     </Form>
                 </CardBody>
@@ -60,11 +91,10 @@ export default function Sign() {
                 <CardBody>
                     <CardTitle><span style={{ fontWeight: 'bolder' }}>Result</span></CardTitle>
                     <CardText>
-                        {formValue.result}
+                        {formValue.signature}
                     </CardText>
                 </CardBody>
             </Card>
-
         </div>
     );
 }
