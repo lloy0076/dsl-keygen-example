@@ -64,13 +64,17 @@ export default function Generate() {
         try {
             // Immediately import to check for any errors.
             CryptographyService.importSigningKey(privateKey).then((key) => {
-                console.log('Imported signing key.', key);
+                console.log('Importing private signing key.', key);
+                localStorage.setItem('private_key', JSON.stringify({ key: privateKey }));
+                setPrivateKey(privateKey);
             }).catch((error) => {
                 console.error('Error importing key to sign.', error);
             });
 
             CryptographyService.importVerificationKey(publicKey).then((key) => {
-                console.log('Imported verification key.', key);
+                console.log('Importing public verification key.', key);
+                localStorage.setItem('public_key', JSON.stringify({ key: publicKey }));
+                setPublicKey(publicKey);
             }).catch((error) => {
                 console.error('Error importing key to verify.', error);
             });
