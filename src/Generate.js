@@ -17,37 +17,15 @@ import React, { useState } from 'react';
 
 import {
     Button,
-    Card, CardBody, CardText, CardTitle,
+    Card, CardBody, CardTitle,
     Form, FormGroup,
 } from 'reactstrap';
 
 import CryptographyService from './lib/CryptographyService';
+import KeyStore from './lib/KeyStore';
 
 export default function Generate() {
-    let initialPrivateKey = '';
-    let initialPublicKey = '';
-
-    const storedPrivateKey = localStorage.getItem('private_key');
-
-    if (storedPrivateKey) {
-        try {
-            const parsed = JSON.parse(storedPrivateKey);
-            initialPrivateKey = parsed.key;
-        } catch (error) {
-            console.error('Error parsing private key', error);
-        }
-    }
-
-    const storedPublicKey = localStorage.getItem('public_key');
-
-    if (storedPublicKey) {
-        try {
-            const parsed = JSON.parse(storedPublicKey);
-            initialPublicKey = parsed.key;
-        } catch (error) {
-            console.error('Error parsing public key', error);
-        }
-    }
+    const { privateKey: initialPrivateKey, publicKey: initialPublicKey} = KeyStore.refreshFromStorage();
 
     const [privateKey, setPrivateKey] = useState(initialPrivateKey);
     const [publicKey, setPublicKey] = useState(initialPublicKey);
@@ -79,18 +57,26 @@ export default function Generate() {
             const publicKeyPem = CryptographyService.makePem(generatedPublicKey, 'PUBLIC KEY');
             localStorage.setItem('public_key', JSON.stringify(publicKeyPem));
             setPublicKey(publicKeyPem.key);
-
-            // Immediately import to check for any errors.
-            CryptographyService.importSigningKey(privateKeyPem.key).catch((error) => {
-                console.error('Error importing key to sign.', error);
-                throw error;
-            });
-
-            CryptographyService.importVerificationKey(publicKeyPem.key).catch((error) => {
-                console.error('Error importing key to verify.', error);
-                throw error;
-            });
         });
+    }
+
+    function importKeys() {
+        try {
+            // Immediately import to check for any errors.
+            CryptographyService.importSigningKey(privateKey).then((key) => {
+                console.log('Imported signing key.', key);
+            }).catch((error) => {
+                console.error('Error importing key to sign.', error);
+            });
+
+            CryptographyService.importVerificationKey(publicKey).then((key) => {
+                console.log('Imported verification key.', key);
+            }).catch((error) => {
+                console.error('Error importing key to verify.', error);
+            });
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     return (
@@ -117,7 +103,7 @@ export default function Generate() {
                     <CardTitle><span style={{ fontWeight: 'bolder' }}>Public Key</span></CardTitle>
                     <Form>
                         <FormGroup>
-                            <textarea name={'publickKey'} id={'publickKey'} value={publicKey} cols={64} rows={10}
+                            <textarea name={'publicKey'} id={'publicKey'} value={publicKey} cols={64} rows={10}
                                 onChange={handleChange}>
                             </textarea>
                         </FormGroup>
@@ -127,7 +113,7 @@ export default function Generate() {
 
             <br/>
 
-            <Button color={'secondary'} disabled={true}>Import Key Pair</Button>&nbsp;
+            <Button color={'secondary'} onClick={importKeys}>Import Key Pair</Button>&nbsp;
             <Button className={'float-right'} color={'primary'} onClick={generateKeyPair}>Generate Key Pair</Button>
         </div>
     );
