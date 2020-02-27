@@ -211,4 +211,23 @@ export default class CryptographyService {
 
         return signatureAsBase64;
     }
+
+    /**
+     * Signs the data, given the private key.
+     *
+     * @param data
+     * @param publicKey
+     * @param algo
+     * @returns {Promise<string>}
+     */
+    static async verify(publicKey, signature, data, algo = 'RSASSA-PKCS1-v1_5') {
+        const encodedData = CryptographyService.str2ab(data);
+
+        const decodedSignatureBytes = atob(signature);
+        const decodedSignature = CryptographyService.str2ab(decodedSignatureBytes);
+
+        const result = await crypto.subtle.verify(algo, publicKey, decodedSignature, encodedData);
+
+        return result;
+    }
 }
