@@ -8,7 +8,16 @@
  * - Signature verification
  * .
  *
- * @todo Figure out how to use TextEncode & TextDecode.
+ * The default algorithm is RSASSA-PKCS1-v1_5; although provision is made for other algorithms, some of the options
+ * may not be easy to use (specifically RSASSA-PSS needs a salt length and that is not able to be passed).
+ *
+ * Messages are encoded using `str2ab` and decoded using `a2str`. These methods convert from characters to array
+ * buffers.
+ *
+ * @note I attempted to use the TextEncode and TextDecode classes but I couldn't figure out how to make them play
+ * nicely.
+ *
+ * Signatures are expected to be encoded as `hex` and are encoded/decoded using `buf2hex` and `hex2buf`.
  */
 export default class CryptographyService {
     /**
@@ -108,6 +117,45 @@ export default class CryptographyService {
     }
 
     /**
+     * Convert a hex string to an ArrayBuffer.
+     *
+     * @param {string} hexString - hex representation of bytes
+     * @return {ArrayBuffer} - The bytes in an ArrayBuffer.
+     */
+    static hex2buf(hex) {
+        // remove the leading 0x
+        const hexString = hex.replace(/^0x/, '');
+
+        // ensure even number of characters
+        if (hexString.length % 2 !== 0) {
+            throw new Error('WARNING: expecting an even number of characters in the hexString');
+        }
+
+        // check for some non-hex characters
+        const bad = hexString.match(/[G-Z\s]/i);
+        if (bad) {
+            throw new Error(`WARNING: found non-hex characters: ${JSON.stringify(bad)}`);
+        }
+
+        // split the string into pairs of octets
+        const pairs = hexString.match(/[\dA-F]{2}/gi);
+
+        if (!pairs) {
+            const empty = new Uint8Array();
+            return empty.buffer;
+        }
+
+        // convert the octets to integers
+        const integers = pairs.map(function (s) {
+            return parseInt(s, 16);
+        });
+
+        const array = new Uint8Array(integers);
+
+        return array.buffer;
+    }
+
+    /**
      * Imports a verification key.
      *
      * @note This is the public key.
@@ -199,17 +247,29 @@ export default class CryptographyService {
      *
      * @param data
      * @param privateKey
-     * @param algo
+     * @param algo The signature algorithm.
+     * @param enc The signature encoding.
      * @returns {Promise<string>}
      */
-    static async sign(data, privateKey, algo = 'RSASSA-PKCS1-v1_5') {
+    static async sign(data, privateKey, algo = 'RSASSA-PKCS1-v1_5', enc = 'hex') {
         const encodedData = CryptographyService.str2ab(data);
 
         const signature = await crypto.subtle.sign(algo, privateKey, encodedData);
-        const signatureAsString = CryptographyService.a2str(signature);
-        const signatureAsBase64 = btoa(signatureAsString);
 
-        return signatureAsBase64;
+        let encodedSignature;
+        switch (enc) {
+        case 'base64':
+            const signatureAsString = CryptographyService.a2str(signature);
+            encodedSignature = btoa(signatureAsString);
+            break;
+        case 'hex':
+            encodedSignature = CryptographyService.buf2hex(signature);
+            break;
+        default:
+            throw new Error(`Unknown signature encoding during verify ${enc}`);
+        }
+
+        return encodedSignature;
     }
 
     /**
@@ -217,14 +277,25 @@ export default class CryptographyService {
      *
      * @param data
      * @param publicKey
-     * @param algo
+     * @param algo The signature algorithm.
+     * @param enc The signature encoding.
      * @returns {Promise<string>}
      */
-    static async verify(publicKey, signature, data, algo = 'RSASSA-PKCS1-v1_5') {
+    static async verify(publicKey, signature, data, algo = 'RSASSA-PKCS1-v1_5', enc = 'hex') {
         const encodedData = CryptographyService.str2ab(data);
 
-        const decodedSignatureBytes = atob(signature);
-        const decodedSignature = CryptographyService.str2ab(decodedSignatureBytes);
+        let decodedSignature;
+        switch (enc) {
+        case 'base64':
+            const decodedSignatureBytes = atob(signature);
+            decodedSignature = CryptographyService.str2ab(decodedSignatureBytes);
+            break;
+        case 'hex':
+            decodedSignature = CryptographyService.hex2buf(signature);
+            break;
+        default:
+            throw new Error(`Unknown signature encoding during verify ${enc}`);
+        }
 
         const result = await crypto.subtle.verify(algo, publicKey, decodedSignature, encodedData);
 

@@ -15,10 +15,20 @@
  */
 import React from 'react';
 
+import { Link } from 'react-router-dom';
+
 export default function Home(props) {
     return (
         <div>
             <h1>Home</h1>
+
+            <ul>
+                <li><Link to={'/generate'}>Generate</Link></li>
+                <li><Link to={'/sign'}>Sign</Link></li>
+                <li><Link to={'/verify'}>Verify</Link></li>
+            </ul>
+
+            <hr />
         </div>
     );
 }
