@@ -194,6 +194,14 @@ export default class CryptographyService {
         }
     }
 
+    /**
+     * Signs the data, given the private key.
+     *
+     * @param data
+     * @param privateKey
+     * @param algo
+     * @returns {Promise<string>}
+     */
     static async sign(data, privateKey, algo = 'RSASSA-PKCS1-v1_5') {
         const encodedData = CryptographyService.str2ab(data);
 

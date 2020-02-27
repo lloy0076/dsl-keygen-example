@@ -31,7 +31,7 @@ export default function Sign() {
 
     const [privateKey, setPrivateKey] = useState(initialPrivateKey);
     const [publicKey, setPublicKey] = useState(initialPublicKey);
-    const [formValue, setFormValue] = useState({ text: initialText });
+    const [formValue, setFormValue] = useState({ text: initialText, signature: initialSignature });
 
     function handleChange(e) {
         const newValue = { ...formValue, ...{ [e.target.id]: e.target.value } };
@@ -45,7 +45,7 @@ export default function Sign() {
             const signature = await CryptographyService.sign(formValue.text, signingKey);
 
             localStorage.setItem('signature', signature);
-            const newValue = { ...formValue, ...{ result: signature } };
+            const newValue = { ...formValue, ...{ signature: signature } };
             setFormValue(newValue);
         }).catch((error) => console.error(error));
     }
@@ -59,7 +59,8 @@ export default function Sign() {
         const bytesAsBase64 = btoa(bytesAsString);
 
         localStorage.setItem('text', bytesAsBase64);
-        setFormValue({ text: bytesAsBase64, result: '' });
+        localStorage.setItem('signature', '');
+        setFormValue({ text: bytesAsBase64, signature: '' });
     }
 
     return (
@@ -90,7 +91,7 @@ export default function Sign() {
                 <CardBody>
                     <CardTitle><span style={{ fontWeight: 'bolder' }}>Result</span></CardTitle>
                     <CardText>
-                        {formValue.result}
+                        {formValue.signature}
                     </CardText>
                 </CardBody>
             </Card>
