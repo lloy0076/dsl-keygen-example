@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 export default class KeyStore {
     static refreshFromStorage() {
         let privateKey;

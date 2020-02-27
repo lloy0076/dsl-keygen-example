@@ -24,13 +24,11 @@ import CryptographyService from './lib/CryptographyService';
 import KeyStore from './lib/KeyStore';
 
 export default function Sign() {
-    const { privateKey: initialPrivateKey, publicKey: initialPublicKey } = KeyStore.refreshFromStorage();
+    const { privateKey } = KeyStore.refreshFromStorage();
 
     const initialText = localStorage.getItem('text');
     const initialSignature = localStorage.getItem('signature');
 
-    const [privateKey, setPrivateKey] = useState(initialPrivateKey);
-    const [publicKey, setPublicKey] = useState(initialPublicKey);
     const [formValue, setFormValue] = useState({ text: initialText, signature: initialSignature });
 
     function handleChange(e) {
@@ -89,7 +87,7 @@ export default function Sign() {
 
             <Card>
                 <CardBody>
-                    <CardTitle><span style={{ fontWeight: 'bolder' }}>Result</span></CardTitle>
+                    <CardTitle><span style={{ fontWeight: 'bolder' }}>Signature</span></CardTitle>
                     <CardText>
                         {formValue.signature}
                     </CardText>

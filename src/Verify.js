@@ -19,18 +19,37 @@ import {
     Card, CardBody, CardText, CardTitle,
     Form, FormGroup,
 } from 'reactstrap';
+import KeyStore from './lib/KeyStore';
+import CryptographyService from './lib/CryptographyService';
 
 export default function Verify() {
-    const [formValue, setFormValue] = useState({ text: '' });
+    const { publicKey } = KeyStore.refreshFromStorage();
+
+    const initialText = localStorage.getItem('text');
+    const initialSignature = localStorage.getItem('signature');
+
+    const [formValue, setFormValue] = useState({ text: initialText, signature: initialSignature, result: null });
 
     function handleChange(e) {
         const newValue = { ...formValue, ...{ [e.target.id]: e.target.value } };
         setFormValue(newValue);
     }
 
-    function handleVerify() {
-        const newValue = { ...formValue, ...{ result: 'TBD' } };
-        setFormValue(newValue);
+    async function handleVerify() {
+        try {
+            CryptographyService.importVerificationKey(publicKey).then(async (verifyingKey) => {
+                const result = await CryptographyService.verify(verifyingKey, formValue.signature, formValue.text);
+
+                const newValue = { ...formValue, ...{ result } };
+                setFormValue(newValue);
+            }).catch((error) => {
+                const newValue = { ...formValue, ...{ result: 'Unable to Verify Signature' } };
+                setFormValue(newValue);
+                console.error(error);
+            });
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     return (
@@ -60,11 +79,42 @@ export default function Verify() {
                 <CardBody>
                     <CardTitle><span style={{ fontWeight: 'bolder' }}>Result</span></CardTitle>
                     <CardText>
-                        {formValue.result}
+                        {(() => {
+                            if (formValue.result === null) {
+                                return '';
+                            }
+
+                            if (formValue.result === true) {
+                                return 'VALID';
+                            }
+
+                            if (formValue.result === false) {
+                                return 'INVALID';
+                            }
+
+                            return formValue.result;
+                        })()}
                     </CardText>
 
                 </CardBody>
             </Card>
+
+            <br/>
+
+            <Card>
+                <CardBody>
+                    <CardTitle><span style={{ fontWeight: 'bolder' }}>Signature</span></CardTitle>
+                    <Form>
+                        <FormGroup>
+                            <textarea name={'signature'} id={'signature'}
+                                value={formValue.signature || ''} onChange={handleChange}
+                                cols={64} rows={10}
+                            />
+                        </FormGroup>
+                    </Form>
+                </CardBody>
+            </Card>
+
 
         </div>
     );
