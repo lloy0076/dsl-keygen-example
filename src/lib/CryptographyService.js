@@ -1,3 +1,15 @@
+/**
+ * A holder for cryptographic methods.
+ *
+ * Currently implemented methods include:
+ *
+ * - Key generation for signatures
+ * - Signature creation
+ * - Signature verification
+ * .
+ *
+ * @todo Figure out how to use TextEncode & TextDecode.
+ */
 export default class CryptographyService {
     /**
      * Turn a buffer into a string.
@@ -10,7 +22,9 @@ export default class CryptographyService {
     }
 
     /**
-     * Decode the buffer back into the string.
+     * Convert a string into an ArrayBuffer.
+     *
+     * - from https://developers.google.com/web/updates/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
      *
      * @param str
      * @returns {ArrayBuffer}
@@ -81,6 +95,16 @@ export default class CryptographyService {
         const binaryDer = CryptographyService.str2ab(binaryDerString);
 
         return binaryDer;
+    }
+
+    /**
+     * Converts a buffer to hex.
+     *
+     * @param buf
+     * @returns {string}
+     */
+    static buf2hex(buf) { // buffer is an ArrayBuffer
+        return Array.prototype.map.call(new Uint8Array(buf), x => ('00' + x.toString(16)).slice(-2)).join('');
     }
 
     /**
@@ -168,5 +192,15 @@ export default class CryptographyService {
             console.error(error);
             return { error };
         }
+    }
+
+    static async sign(data, privateKey, algo = 'RSASSA-PKCS1-v1_5') {
+        const encodedData = CryptographyService.str2ab(data);
+
+        const signature = await crypto.subtle.sign(algo, privateKey, encodedData);
+        const signatureAsString = CryptographyService.a2str(signature);
+        const signatureAsBase64 = btoa(signatureAsString);
+
+        return signatureAsBase64;
     }
 }
