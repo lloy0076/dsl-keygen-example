@@ -87,7 +87,7 @@ export default function Sign() {
 
             <Card>
                 <CardBody>
-                    <CardTitle><span style={{ fontWeight: 'bolder' }}>Result</span></CardTitle>
+                    <CardTitle><span style={{ fontWeight: 'bolder' }}>Signature</span></CardTitle>
                     <CardText>
                         {formValue.signature}
                     </CardText>
