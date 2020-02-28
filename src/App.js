@@ -34,6 +34,7 @@ import {
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 
+import Digest from './Digest';
 import Generate from './Generate';
 import Home from './Home';
 import Verify from './Verify';
@@ -66,6 +67,11 @@ function App() {
                                         Verify
                                     </NavLink>
                                 </NavItem>
+                                <NavItem>
+                                    <NavLink tag={RRNavLink} exact to={'/digest'} activeClassName={'active'}>
+                                        Digest
+                                    </NavLink>
+                                </NavItem>
                             </Nav>
                         </Collapse>
                     </Navbar>
@@ -79,6 +85,9 @@ function App() {
                     </Route>
                     <Route path={'/generate'}>
                         <Generate/>
+                    </Route>
+                    <Route path={'/digest'}>
+                        <Digest/>
                     </Route>
                     <Route path={'/'}>
                         <Home/>

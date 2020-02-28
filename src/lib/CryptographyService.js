@@ -156,6 +156,24 @@ export default class CryptographyService {
     }
 
     /**
+     * Gets the known digest methods.
+     *
+     * @returns {{}}
+     */
+    static getKnownDigestTypes() {
+        const knownDigests = {};
+        const bits = [1, 256, 384, 512];
+
+        bits.forEach((value) => {
+            knownDigests[`sha${value}`] = `SHA-${value}`;
+            knownDigests[`sha-${value}`] = `SHA-${value}`;
+            knownDigests[`SHA${value}`] = `SHA-${value}`;
+            knownDigests[`SHA-${value}`] = `SHA-${value}`;
+        });
+        return knownDigests;
+    }
+
+    /**
      * Imports a verification key.
      *
      * @note This is the public key.
@@ -279,26 +297,96 @@ export default class CryptographyService {
      * @param publicKey
      * @param algo The signature algorithm.
      * @param enc The signature encoding.
-     * @returns {Promise<string>}
+     * @returns {Promise<boolean>}
      */
     static async verify(publicKey, signature, data, algo = 'RSASSA-PKCS1-v1_5', enc = 'hex') {
         const encodedData = CryptographyService.str2ab(data);
 
         let decodedSignature;
-        switch (enc) {
-        case 'base64':
-            const decodedSignatureBytes = atob(signature);
-            decodedSignature = CryptographyService.str2ab(decodedSignatureBytes);
-            break;
-        case 'hex':
-            decodedSignature = CryptographyService.hex2buf(signature);
-            break;
-        default:
-            throw new Error(`Unknown signature encoding during verify ${enc}`);
+        let decodedSignatureBytes;
+        try {
+            switch (enc) {
+            case 'base64':
+                decodedSignatureBytes = atob(signature);
+                decodedSignature = CryptographyService.str2ab(decodedSignatureBytes);
+                break;
+            case 'hex':
+                decodedSignature = CryptographyService.hex2buf(signature);
+                break;
+            default:
+                throw new Error(`Unknown signature encoding during verify ${enc}`);
+            }
+        } catch (error) {
+            console.warn(error);
+            return false;
         }
 
         const result = await crypto.subtle.verify(algo, publicKey, decodedSignature, encodedData);
 
         return result;
+    }
+
+    /**
+     * Generates and returns the digest.
+     *
+     * @param data
+     * @param algo
+     * @param enc
+     * @returns {Promise<string>}
+     */
+    static async digest(data, algo = 'sha256', enc = 'hex') {
+        const knownDigests = CryptographyService.getKnownDigestTypes();
+
+        const encodedData = CryptographyService.str2ab(data);
+        const digest = await crypto.subtle.digest(knownDigests[algo], encodedData);
+
+        let encodedDigest;
+        let digestAsString;
+        switch (enc) {
+        case 'base64':
+            digestAsString = CryptographyService.a2str(digest);
+            encodedDigest = btoa(digestAsString);
+            break;
+        case 'hex':
+            encodedDigest = CryptographyService.buf2hex(digest);
+            break;
+        default:
+            throw new Error(`Unknown digest encoding during digest ${enc}`);
+        }
+
+        return encodedDigest;
+    }
+
+    /**
+     * Generates and returns the digest.
+     *
+     * @note This exists for those who prefer to call this `hash`.
+     *
+     * @param data
+     * @param algo
+     * @param enc
+     * @returns {Promise<string>}
+     */
+    static async hash(data, algo = 'sha256', enc = 'hex') {
+        return CryptographyService.digest(data, algo, enc);
+    }
+
+    static timingSafeEqual(a, b) {
+        if (!Buffer.isBuffer(a)) {
+            throw new TypeError('First argument must be a buffer')
+        }
+        if (!Buffer.isBuffer(b)) {
+            throw new TypeError('Second argument must be a buffer')
+        }
+        if (a.length !== b.length) {
+            throw new TypeError('Input buffers must have the same length')
+        }
+        var len = a.length
+        var out = 0
+        var i = -1
+        while (++i < len) {
+            out |= a[i] ^ b[i]
+        }
+        return out === 0
     }
 }
