@@ -171,6 +171,7 @@ export default class CryptographyService {
             knownDigests[`SHA${value}`] = `SHA-${value}`;
             knownDigests[`SHA-${value}`] = `SHA-${value}`;
         });
+
         return knownDigests;
     }
 
