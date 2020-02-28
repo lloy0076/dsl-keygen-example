@@ -16,58 +16,41 @@
 import React, { useState } from 'react';
 import {
     Button,
-    Card, CardBody, CardText, CardTitle,
+    Card, CardBody, CardTitle,
     Form, FormGroup,
 } from 'reactstrap';
 
 import CryptographyService from './lib/CryptographyService';
-import KeyStore from './lib/KeyStore';
 
-export default function Sign() {
-    const { privateKey } = KeyStore.refreshFromStorage();
-
+export default function Digest() {
     const initialText = localStorage.getItem('text');
     const initialSignature = localStorage.getItem('signature');
 
-    const [formValue, setFormValue] = useState({ text: initialText, signature: initialSignature });
+    const [formValue, setFormValue] = useState({ text: initialText, signature: initialSignature, result: null });
 
     function handleChange(e) {
         const newValue = { ...formValue, ...{ [e.target.id]: e.target.value } };
-        localStorage.setItem('text', e.target.value);
-
         setFormValue(newValue);
     }
 
-    async function handleSign() {
-        CryptographyService.importSigningKey(privateKey).then(async (signingKey) => {
-            const signature = await CryptographyService.sign(formValue.text, signingKey);
-
-            localStorage.setItem('signature', signature);
-            const newValue = { ...formValue, ...{ signature } };
+    async function handleDigest() {
+        CryptographyService.digest(formValue.text, 'sha256', 'hex').then((digest) => {
+            const newValue = { ...formValue, ...{ digest } };
             setFormValue(newValue);
-        }).catch((error) => console.error(error));
-    }
-
-    function handleFill() {
-        const howMany = Math.ceil(Math.random() * 512) + 32;
-        const bytes = new Uint8Array(howMany);
-        crypto.getRandomValues(bytes);
-
-        const bytesAsString = CryptographyService.a2str(bytes);
-        const bytesAsBase64 = btoa(bytesAsString);
-
-        localStorage.setItem('text', bytesAsBase64);
-        localStorage.setItem('signature', '');
-        setFormValue({ text: bytesAsBase64, signature: '' });
+        }).catch((error) => {
+            const newValue = { ...formValue, ...{ digest: 'Unable to Generate Digest' } };
+            setFormValue(newValue);
+            console.error(error);
+        });
     }
 
     return (
         <div>
-            <h1>Sign</h1>
+            <h1>Digest</h1>
 
             <Card>
                 <CardBody>
-                    <CardTitle><span style={{ fontWeight: 'bolder' }}>Text to Sign</span></CardTitle>
+                    <CardTitle><span style={{ fontWeight: 'bolder' }}>Text to Digest</span></CardTitle>
                     <Form>
                         <FormGroup>
                             <textarea name={'text'} id={'text'}
@@ -76,8 +59,7 @@ export default function Sign() {
                             />
                         </FormGroup>
                         <FormGroup>
-                            <Button className={'float-left'} color={'secondary'} onClick={handleFill}>Fill</Button>
-                            <Button className={'float-right'} color={'primary'} onClick={handleSign}>Sign</Button>
+                            <Button className={'float-left'} color={'success'} onClick={handleDigest}>Digest</Button>
                         </FormGroup>
                     </Form>
                 </CardBody>
@@ -87,12 +69,19 @@ export default function Sign() {
 
             <Card>
                 <CardBody>
-                    <CardTitle><span style={{ fontWeight: 'bolder' }}>Signature</span></CardTitle>
-                    <CardText>
-                        {formValue.signature}
-                    </CardText>
+                    <CardTitle><span style={{ fontWeight: 'bolder' }}>Digest</span></CardTitle>
+                    <Form>
+                        <FormGroup>
+                            <textarea name={'digest'} id={'digest'}
+                                value={formValue.digest || ''} onChange={handleChange}
+                                cols={64} rows={10}
+                            />
+                        </FormGroup>
+                    </Form>
                 </CardBody>
             </Card>
+
+
         </div>
     );
 }

@@ -26,6 +26,7 @@ export default function Home(props) {
                 <li><Link to={'/generate'}>Generate</Link></li>
                 <li><Link to={'/sign'}>Sign</Link></li>
                 <li><Link to={'/verify'}>Verify</Link></li>
+                <li><Link to={'/digest'}>Digest</Link></li>
             </ul>
 
             <hr />
