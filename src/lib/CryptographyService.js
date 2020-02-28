@@ -41,6 +41,7 @@ export default class CryptographyService {
     static str2ab(str) {
         const buf = new ArrayBuffer(str.length);
         const bufView = new Uint8Array(buf);
+        // eslint-disable-next-line no-plusplus
         for (let i = 0, strLen = str.length; i < strLen; i++) {
             bufView[i] = str.charCodeAt(i);
         }
@@ -113,7 +114,7 @@ export default class CryptographyService {
      * @returns {string}
      */
     static buf2hex(buf) { // buffer is an ArrayBuffer
-        return Array.prototype.map.call(new Uint8Array(buf), x => ('00' + x.toString(16)).slice(-2)).join('');
+        return Array.prototype.map.call(new Uint8Array(buf), (x) => (`00${x.toString(16)}`).slice(-2)).join('');
     }
 
     /**
@@ -146,7 +147,7 @@ export default class CryptographyService {
         }
 
         // convert the octets to integers
-        const integers = pairs.map(function (s) {
+        const integers = pairs.map((s) => {
             return parseInt(s, 16);
         });
 
@@ -275,9 +276,10 @@ export default class CryptographyService {
         const signature = await crypto.subtle.sign(algo, privateKey, encodedData);
 
         let encodedSignature;
+        let signatureAsString;
         switch (enc) {
         case 'base64':
-            const signatureAsString = CryptographyService.a2str(signature);
+            signatureAsString = CryptographyService.a2str(signature);
             encodedSignature = btoa(signatureAsString);
             break;
         case 'hex':
@@ -371,22 +373,42 @@ export default class CryptographyService {
         return CryptographyService.digest(data, algo, enc);
     }
 
-    static timingSafeEqual(a, b) {
-        if (!Buffer.isBuffer(a)) {
-            throw new TypeError('First argument must be a buffer')
+    /**
+     * Implement a timing safe equals.
+     *
+     * @note This "leaks" that the byte lengths are different HOWEVER the user can already determine this themselves
+     * so this is not a security issue.
+     *
+     * @param left
+     * @param right
+     * @returns {boolean}
+     */
+    static timingSafeEqual(left, right) {
+        const leftArrayBuf = left instanceof Object ? left : CryptographyService.str2ab(left);
+        const rightArrayBuf = right instanceof Object ? right : CryptographyService.str2ab(right);
+
+        if (leftArrayBuf instanceof ArrayBuffer && rightArrayBuf instanceof ArrayBuffer) {
+            // If they're of different lengths, we know they're not the same; I don't think timing matters in this case.
+            if (leftArrayBuf.byteLength !== rightArrayBuf.byteLength) {
+                return false;
+            }
+
+            const a = new DataView(leftArrayBuf);
+            const b = new DataView(rightArrayBuf);
+
+            const len = a.byteLength;
+            let out = 0;
+            let i = -1;
+
+            // eslint-disable-next-line no-plusplus
+            while (++i < len) {
+                // eslint-disable-next-line no-bitwise
+                out |= a.getUint8(i) ^ b.getUint8(i);
+            }
+
+            return out === 0;
         }
-        if (!Buffer.isBuffer(b)) {
-            throw new TypeError('Second argument must be a buffer')
-        }
-        if (a.length !== b.length) {
-            throw new TypeError('Input buffers must have the same length')
-        }
-        var len = a.length
-        var out = 0
-        var i = -1
-        while (++i < len) {
-            out |= a[i] ^ b[i]
-        }
-        return out === 0
+
+        throw new Error('Expected two array buffers.');
     }
 }
