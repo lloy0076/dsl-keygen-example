@@ -35,7 +35,6 @@ export default function Digest() {
 
     async function handleDigest() {
         CryptographyService.digest(formValue.text, 'sha256', 'hex').then((digest) => {
-            console.log(digest);
             const newValue = { ...formValue, ...{ digest } };
             setFormValue(newValue);
         }).catch((error) => {
