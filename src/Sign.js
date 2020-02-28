@@ -43,7 +43,7 @@ export default function Sign() {
             const signature = await CryptographyService.sign(formValue.text, signingKey);
 
             localStorage.setItem('signature', signature);
-            const newValue = { ...formValue, ...{ signature: signature } };
+            const newValue = { ...formValue, ...{ signature } };
             setFormValue(newValue);
         }).catch((error) => console.error(error));
     }
