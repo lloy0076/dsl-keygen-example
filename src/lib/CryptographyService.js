@@ -393,17 +393,17 @@ export default class CryptographyService {
                 return false;
             }
 
-            const a = new DataView(leftArrayBuf);
-            const b = new DataView(rightArrayBuf);
+            const leftArrayBufView = new DataView(leftArrayBuf);
+            const rightArrayBufView = new DataView(rightArrayBuf);
 
-            const len = a.byteLength;
+            const len = leftArrayBufView.byteLength;
             let out = 0;
             let i = -1;
 
             // eslint-disable-next-line no-plusplus
             while (++i < len) {
                 // eslint-disable-next-line no-bitwise
-                out |= a.getUint8(i) ^ b.getUint8(i);
+                out |= leftArrayBufView.getUint8(i) ^ rightArrayBufView.getUint8(i);
             }
 
             return out === 0;
