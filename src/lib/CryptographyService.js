@@ -97,7 +97,9 @@ export default class CryptographyService {
         // fetch the part of the PEM string between header and footer
         const pemHeader = CryptographyService.makePemHeader(type);
         const pemFooter = CryptographyService.makePemFooter(type);
-        const pemContents = pem.substring(pemHeader.length, pem.length - pemFooter.length);
+        const pemStripped = pem.replace(/(\r\n|\n|\r)/gm, "");
+        // WARNING! There is an off by one somewhere and I do not know what causes it.
+        const pemContents = pemStripped.substring(pemHeader.length, pemStripped.length - pemFooter.length);
 
         // base64 decode the string to get the binary data
         const binaryDerString = atob(pemContents);
