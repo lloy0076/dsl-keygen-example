@@ -2,10 +2,13 @@
 
 This is a simple REACT application to generate a set of RSASSA-PKCS1-v1_5 key pairs.
 
-It uses the Crypto facilities available in all modern browser, see:
+It uses the Crypto facilities available in all modern browsers, see:
 
 * https://developer.mozilla.org/en-US/docs/Web/API/Crypto
 * https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto
+
+Please read and understand the security implications of this choice before using any of the generated keys in a 
+production environment.
 
 To generate a key pair, see:
 
